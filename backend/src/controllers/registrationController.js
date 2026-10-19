@@ -107,7 +107,14 @@ async function createRegistration(req, res, next) {
       registrationId = regResult.insertId;
 
       for (const p of passengers) {
-        const ageCategory = calculateAgeCategory(p.birth_date, new Date(), settings);
+        let bDate = p.birth_date;
+        try {
+          const d = new Date(p.birth_date);
+          if (!isNaN(d.getTime())) {
+            bDate = d.toISOString().slice(0, 10);
+          }
+        } catch (_) {}
+        const ageCategory = calculateAgeCategory(bDate, new Date(), settings);
         await conn.execute(
           `INSERT INTO registration_passengers
            (registration_id, family_member_id, full_name, nik, birth_date, gender, identity_type, phone, domicile_address, age_category)
@@ -117,7 +124,7 @@ async function createRegistration(req, res, next) {
             p.family_member_id || null,
             p.full_name,
             p.nik || null,
-            p.birth_date,
+            bDate,
             p.gender,
             p.identity_type,
             p.phone || null,
