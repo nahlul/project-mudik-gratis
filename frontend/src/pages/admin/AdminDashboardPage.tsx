@@ -1,25 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminAPI } from '../../lib/api';
 import type { AdminStats } from '../../types';
 import AdminLayout from '../../components/Layout/AdminLayout';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import { Users, Clock, CheckCircle, XCircle, Ticket, TrendingUp } from 'lucide-react';
+import { Users, Clock, CheckCircle, XCircle, Ticket, TrendingUp, RefreshCw } from 'lucide-react';
+import { getApiErrorMessage } from '../../hooks/useApi';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
+    setLoading(true);
+    setError('');
     AdminAPI.stats()
       .then((res) => {
         const data = (res.data as { data?: AdminStats }).data ?? res.data as AdminStats;
         setStats(data);
       })
-      .catch(() => setError('Gagal memuat statistik'))
+      .catch((err) => {
+        const msg = getApiErrorMessage(err);
+        setError(msg || 'Gagal memuat statistik. Silakan coba beberapa saat lagi.');
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const regsObj = stats?.registrations as Record<string, number> | undefined;
   const totalRegs = stats?.total_registrations ?? (regsObj ? Object.values(regsObj).reduce((a: number, b: number) => a + Number(b), 0) : 0);
@@ -48,7 +58,23 @@ export default function AdminDashboardPage() {
       {loading ? (
         <LoadingSpinner message="Memuat data..." />
       ) : error ? (
-        <div className="card text-red-600 text-center">{error}</div>
+        <div className="card text-center py-8">
+          <p className="text-red-600 font-medium mb-4">{error}</p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={loadStats}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 transition"
+            >
+              <RefreshCw className="w-4 h-4" /> Coba Muat Ulang
+            </button>
+            <Link
+              to="/admin/login"
+              className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition"
+            >
+              Login Ulang Admin
+            </Link>
+          </div>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">

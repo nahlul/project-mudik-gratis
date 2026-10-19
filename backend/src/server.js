@@ -54,7 +54,7 @@ app.use(cors({
 // ─── General Rate Limiting ─────────────────────────────────────────
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 3000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests, please try again later.' },
@@ -82,6 +82,7 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/routes', routeRoutes);
 app.use('/api/v1/family-members', familyRoutes);
+app.use('/api/v1/family', familyRoutes);
 app.use('/api/v1/registrations', registrationRoutes);
 app.use('/api/v1/tickets', ticketRoutes);
 app.use('/api/v1/notifications', notificationRoutes);

@@ -150,6 +150,9 @@ export const AdminAPI = {
   listRoutes: (params?: Record<string, unknown>) =>
     api.get<Route[]>('/admin/routes', { params }),
 
+  listSchedules: (params?: Record<string, unknown>) =>
+    api.get<Schedule[]>('/admin/schedules', { params }),
+
   updateRoute: (id: number, data: Partial<Route>) =>
     api.put<Route>(`/admin/routes/${id}`, data),
 

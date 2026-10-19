@@ -1,33 +1,26 @@
 import { useEffect, useState } from 'react';
-import { RoutesAPI } from '../../lib/api';
-import type { Route, Schedule } from '../../types';
+import { AdminAPI } from '../../lib/api';
+import type { Schedule } from '../../types';
 import AdminLayout from '../../components/Layout/AdminLayout';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { Calendar, MapPin } from 'lucide-react';
 
 export default function AdminJadwalPage() {
-  const [routes, setRoutes] = useState<Route[]>([]);
   const [schedules, setSchedules] = useState<{ schedule: Schedule; routeName: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    RoutesAPI.list()
-      .then(async (res) => {
-        const routeList = Array.isArray(res.data) ? res.data : (res.data as { data?: Route[] }).data ?? [];
-        setRoutes(routeList);
-
-        const allSchedules: { schedule: Schedule; routeName: string }[] = [];
-        for (const route of routeList) {
-          try {
-            const schedRes = await RoutesAPI.getSchedules(route.id);
-            const schedList = Array.isArray(schedRes.data) ? schedRes.data : (schedRes.data as { data?: Schedule[] }).data ?? [];
-            schedList.forEach((s) => allSchedules.push({ schedule: s, routeName: route.route_name || route.name || '-' }));
-          } catch {
-            /* ignore */
-          }
-        }
-        setSchedules(allSchedules);
+    AdminAPI.listSchedules({ limit: 100 })
+      .then((res) => {
+        const payload = res.data as { data?: (Schedule & { route_name?: string })[] };
+        const schedList = Array.isArray(res.data) ? res.data : payload.data ?? [];
+        const formatted = schedList.map((s: Schedule & { route_name?: string }) => ({
+          schedule: s,
+          routeName: s.route_name || s.route?.route_name || '-',
+        }));
+        setSchedules(formatted);
       })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -35,7 +28,7 @@ export default function AdminJadwalPage() {
     <AdminLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Jadwal Keberangkatan</h1>
-        <p className="text-slate-500 text-sm mt-1">Daftar semua jadwal keberangkatan bus mudik gratis ({routes.length} rute)</p>
+        <p className="text-slate-500 text-sm mt-1">Daftar semua jadwal keberangkatan bus mudik gratis ({schedules.length} jadwal)</p>
       </div>
 
       {loading ? (
