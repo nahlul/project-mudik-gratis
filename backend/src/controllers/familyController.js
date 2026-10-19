@@ -5,19 +5,28 @@ const { query, pool } = require('../config/database');
 const { success, error } = require('../utils/response');
 
 const familyMemberValidation = [
-  body('full_name').trim().notEmpty().withMessage('Full name is required').isLength({ max: 255 }),
-  body('birth_date').isDate().withMessage('Valid birth date (YYYY-MM-DD) is required'),
-  body('gender').isIn(['L', 'P']).withMessage('Gender must be L or P'),
-  body('identity_type').isIn(['KTP', 'KIA', 'KK']).withMessage('Identity type must be KTP, KIA, or KK'),
-  body('nik').optional({ nullable: true }).isLength({ min: 16, max: 16 }).withMessage('NIK must be 16 digits'),
+  body('full_name').custom((val, { req }) => {
+    const name = val || req.body.name;
+    if (!name || !name.trim()) throw new Error('Nama lengkap wajib diisi');
+    req.body.full_name = name.trim();
+    return true;
+  }),
+  body('birth_date').isDate().withMessage('Format tanggal lahir tidak valid (YYYY-MM-DD)'),
+  body('gender').isIn(['L', 'P']).withMessage('Jenis kelamin harus L atau P'),
+  body('nik').optional({ nullable: true }).isLength({ min: 16, max: 16 }).withMessage('NIK harus 16 digit'),
   body('phone').optional({ nullable: true }).isLength({ max: 20 }),
-  body('domicile_address').trim().notEmpty().withMessage('Domicile address is required'),
+  body('domicile_address').custom((val, { req }) => {
+    const addr = val || req.body.address;
+    if (!addr || !addr.trim()) throw new Error('Alamat domisili wajib diisi');
+    req.body.domicile_address = addr.trim();
+    return true;
+  }),
 ];
 
 async function listFamilyMembers(req, res, next) {
   try {
     const members = await query(
-      'SELECT id, full_name, birth_date, gender, identity_type, phone, domicile_address, created_at, updated_at FROM family_members WHERE user_id = ? ORDER BY created_at DESC',
+      'SELECT id, full_name, full_name as name, birth_date, gender, identity_type, phone, domicile_address, domicile_address as address, created_at, updated_at FROM family_members WHERE user_id = ? ORDER BY created_at DESC',
       [req.user.id]
     );
     return success(res, members, 'Family members retrieved');

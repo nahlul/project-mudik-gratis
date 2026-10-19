@@ -9,6 +9,7 @@ import Input from '../../components/ui/Input';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { AlertCircle, Plus, Trash2, Upload, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 import { differenceInYears } from 'date-fns';
+import { getApiErrorMessage } from '../../hooks/useApi';
 
 const STEPS = [
   { id: 1, label: 'Pilih Rute' },
@@ -101,9 +102,16 @@ export default function DaftarMudikPage() {
     if (s === 2 && !selectedSchedule) errs.push('Pilih jadwal terlebih dahulu');
     if (s === 3) {
       passengers.forEach((p, i) => {
-        if (!p.name.trim()) errs.push(`Penumpang ${i + 1}: nama wajib diisi`);
+        if (!p.name.trim()) errs.push(`Penumpang ${i + 1}: nama lengkap wajib diisi`);
         if (!p.nik || p.nik.length !== 16) errs.push(`Penumpang ${i + 1}: NIK harus 16 digit`);
         if (!p.birth_date) errs.push(`Penumpang ${i + 1}: tanggal lahir wajib diisi`);
+      });
+    }
+    if (s === 4) {
+      passengers.forEach((p, i) => {
+        if (!documents[i]) {
+          errs.push(`Penumpang ${i + 1} (${p.name || 'Penumpang ' + (i + 1)}): foto/scan dokumen identitas wajib diunggah`);
+        }
       });
     }
     return errs;
@@ -121,16 +129,34 @@ export default function DaftarMudikPage() {
     setLoading(true);
     setError('');
     try {
+      const payloadPassengers = passengers.map((p) => {
+        const anyP = p as unknown as Record<string, string>;
+        const fullName = (p.name || anyP.full_name || '').trim();
+        const address = (p.address || anyP.domicile_address || '').trim() || '-';
+        return {
+          full_name: fullName,
+          name: fullName,
+          nik: p.nik,
+          birth_date: p.birth_date,
+          gender: p.gender,
+          identity_type: p.identity_type || 'KTP',
+          phone: p.phone,
+          domicile_address: address,
+          address: address,
+        };
+      });
+
       const res = await RegistrationAPI.create({
         schedule_id: selectedSchedule!.id,
-        passengers,
+        passengers: payloadPassengers,
       });
       const regId = (res.data as { id?: number }).id ?? (res.data as { data?: { id: number } }).data?.id;
 
       // Upload documents
       if (regId) {
         const passRes = await RegistrationAPI.getById(regId);
-        const savedPassengers = (passRes.data as { passengers?: { id: number }[] }).passengers ?? [];
+        const regData = passRes.data as { passengers?: { id: number }[]; data?: { passengers?: { id: number }[] } };
+        const savedPassengers = regData.passengers ?? regData.data?.passengers ?? [];
         for (let i = 0; i < savedPassengers.length; i++) {
           const file = documents[i];
           if (file && savedPassengers[i]?.id) {
@@ -143,8 +169,7 @@ export default function DaftarMudikPage() {
         navigate(`/pendaftaran/${regId}`);
       }
     } catch (err) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message ?? 'Gagal menyimpan pendaftaran');
+      setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

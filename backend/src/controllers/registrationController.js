@@ -61,11 +61,13 @@ async function createRegistration(req, res, next) {
 
     // Validate each passenger
     for (const p of passengers) {
-      if (!p.full_name) return error(res, 'Passenger full_name is required', 422);
-      if (!p.birth_date) return error(res, 'Passenger birth_date is required', 422);
-      if (!['L', 'P'].includes(p.gender)) return error(res, 'Passenger gender must be L or P', 422);
-      if (!['KTP', 'KIA', 'KK'].includes(p.identity_type)) return error(res, 'Passenger identity_type must be KTP, KIA, or KK', 422);
-      if (!p.domicile_address) return error(res, 'Passenger domicile_address is required', 422);
+      p.full_name = (p.full_name || p.name || '').trim();
+      p.domicile_address = (p.domicile_address || p.address || '').trim() || '-';
+      p.identity_type = p.identity_type || 'KTP';
+      if (!p.full_name) return error(res, 'Nama lengkap penumpang wajib diisi', 422);
+      if (!p.birth_date) return error(res, 'Tanggal lahir penumpang wajib diisi', 422);
+      if (!['L', 'P'].includes(p.gender)) return error(res, 'Jenis kelamin penumpang harus L atau P', 422);
+      if (!p.domicile_address) return error(res, 'Alamat domisili penumpang wajib diisi', 422);
     }
 
     // Validate schedule
@@ -246,7 +248,15 @@ async function submitRegistration(req, res, next) {
       [id]
     );
     if (passengersWithoutDocs.length) {
-      return error(res, 'All passengers must have at least one identity document uploaded', 422, passengersWithoutDocs.map(p => ({ passenger: p.full_name, message: 'No document uploaded' })));
+      return error(
+        res,
+        'Wajib mengunggah foto/scan dokumen identitas untuk setiap penumpang',
+        422,
+        passengersWithoutDocs.map((p) => ({
+          passenger: p.full_name,
+          message: `Dokumen untuk ${p.full_name} belum diunggah`,
+        }))
+      );
     }
 
     await query(
