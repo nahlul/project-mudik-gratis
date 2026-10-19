@@ -1,16 +1,30 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
+# Build outputs
 dist
 dist-ssr
-*.local
+build
+
+# Storage files (keep directory, ignore uploaded files)
+backend/storage/documents/*
+!backend/storage/documents/.gitkeep
 
 # Editor directories and files
 .vscode/*
