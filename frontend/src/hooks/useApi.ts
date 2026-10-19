@@ -63,11 +63,20 @@ export function useApi<T>(
 
 export function getApiErrorMessage(err: unknown): string {
   if (!err) return '';
-  const axiosErr = err as AxiosError<{ message?: string; error?: string }>;
-  return (
-    axiosErr.response?.data?.message ||
-    axiosErr.response?.data?.error ||
-    (err as Error).message ||
-    'Terjadi kesalahan'
-  );
+  const axiosErr = err as AxiosError<{
+    message?: string;
+    error?: string;
+    errors?: Array<{ msg?: string; message?: string }>;
+  }>;
+  if (axiosErr.response?.data) {
+    const data = axiosErr.response.data;
+    if (Array.isArray(data.errors) && data.errors.length > 0) {
+      return data.errors
+        .map((e) => e.msg || e.message)
+        .filter(Boolean)
+        .join(', ');
+    }
+    return data.message || data.error || (err as Error).message || 'Terjadi kesalahan';
+  }
+  return (err as Error).message || 'Terjadi kesalahan';
 }

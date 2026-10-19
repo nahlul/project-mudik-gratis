@@ -20,14 +20,14 @@ function signToken(userId) {
 
 // Validation rules
 const registerValidation = [
-  body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 255 }),
-  body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
+  body('name').trim().notEmpty().withMessage('Nama lengkap wajib diisi').isLength({ max: 255 }),
+  body('email').isEmail().withMessage('Format email tidak valid').normalizeEmail(),
   body('password')
-    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
-    .matches(/[A-Z]/).withMessage('Password must contain an uppercase letter')
-    .matches(/[0-9]/).withMessage('Password must contain a number')
-    .matches(/[^A-Za-z0-9]/).withMessage('Password must contain a special character'),
-  body('phone').optional({ nullable: true }).isMobilePhone().withMessage('Invalid phone number'),
+    .isLength({ min: 6 }).withMessage('Kata sandi minimal 6 karakter'),
+  body('phone')
+    .optional({ checkFalsy: true })
+    .matches(/^[0-9+\s-]{8,20}$/)
+    .withMessage('Format nomor HP tidak valid (contoh: 08123456789)'),
 ];
 
 const loginValidation = [
