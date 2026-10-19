@@ -75,7 +75,9 @@ export default function PendaftaranDetailPage() {
               <MapPin className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
               <div>
                 <div className="text-xs text-slate-400">Rute</div>
-                <div className="font-medium text-slate-800">{reg.schedule?.route?.route_name || reg.schedule?.route?.name || '-'}</div>
+                <div className="font-medium text-slate-800">
+                  {reg.schedule?.route?.route_name || (reg as unknown as Record<string, string>).route_name || reg.schedule?.route?.name || '-'}
+                </div>
               </div>
             </div>
             <div className="flex items-start gap-2">
@@ -83,7 +85,9 @@ export default function PendaftaranDetailPage() {
               <div>
                 <div className="text-xs text-slate-400">Tanggal</div>
                 <div className="font-medium text-slate-800">
-                  {reg.schedule ? new Date(reg.schedule.departure_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                  {reg.schedule?.departure_date || (reg as unknown as Record<string, string>).departure_date
+                    ? new Date(reg.schedule?.departure_date || (reg as unknown as Record<string, string>).departure_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : '-'}
                 </div>
               </div>
             </div>

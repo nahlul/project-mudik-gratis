@@ -166,6 +166,19 @@ async function getRegistrationDetail(registrationId) {
   if (!regs.length) return null;
 
   const reg = regs[0];
+  reg.schedule = {
+    departure_date: reg.departure_date,
+    departure_time: reg.departure_time,
+    departure_location: reg.departure_location,
+    capacity: reg.capacity,
+    booked_seats: reg.booked_seats,
+    status: reg.schedule_status,
+    route: {
+      origin: reg.origin,
+      destination: reg.destination,
+      route_name: reg.route_name,
+    },
+  };
   reg.passengers = await query(
     `SELECT rp.*, 
        GROUP_CONCAT(id.id) as doc_ids,
