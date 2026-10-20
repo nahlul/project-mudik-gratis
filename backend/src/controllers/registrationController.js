@@ -200,7 +200,12 @@ async function getRegistrationDetail(registrationId) {
         [p.id]
       );
       const { doc_ids, doc_types, doc_statuses, ...passenger } = p;
-      return { ...passenger, documents: docs };
+      return {
+        ...passenger,
+        name: passenger.full_name || passenger.name,
+        address: passenger.domicile_address || passenger.address,
+        documents: docs,
+      };
     })
   );
   reg.passengers = passengersWithDocs;

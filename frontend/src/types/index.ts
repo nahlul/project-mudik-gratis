@@ -56,14 +56,24 @@ export interface FamilyMember {
 export interface Passenger {
   id?: number;
   name: string;
+  full_name?: string;
   nik: string;
   birth_date: string;
   gender: 'L' | 'P';
   identity_type: string;
   phone?: string;
   address?: string;
+  domicile_address?: string;
   age_category?: string;
   document_status?: string;
+  documents?: Array<{
+    id: number;
+    document_type?: string;
+    original_filename?: string;
+    mime_type?: string;
+    file_size?: number;
+    verification_status?: string;
+  }>;
 }
 
 export interface Registration {
@@ -73,6 +83,7 @@ export interface Registration {
   schedule_id: number;
   status: 'draft' | 'submitted' | 'need_revision' | 'verified' | 'rejected';
   admin_notes?: string;
+  rejection_reason?: string;
   passengers?: Passenger[];
   schedule?: Schedule;
   created_at: string;

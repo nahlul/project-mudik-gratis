@@ -9,12 +9,17 @@ const { error } = require('../utils/response');
  * Attaches req.user = { id, name, email, status, roles: [string] }
  */
 async function authenticate(req, res, next) {
+  let token = null;
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return error(res, 'Authentication required', 401);
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else if (req.query && req.query.token) {
+    token = req.query.token;
   }
 
-  const token = authHeader.slice(7);
+  if (!token) {
+    return error(res, 'Authentication required', 401);
+  }
   let payload;
   try {
     payload = jwt.verify(token, process.env.JWT_SECRET);

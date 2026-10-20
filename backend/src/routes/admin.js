@@ -5,6 +5,7 @@ const router = express.Router();
 const {
   listAdminRegistrations, getAdminRegistration,
   approveRegistration, rejectRegistration, requestRevision,
+  verifyRegistration,
   serveDocument,
   listAdminRoutes, createRoute, updateRoute,
   listAdminSchedules, createSchedule, updateSchedule,
@@ -18,6 +19,7 @@ router.use(requireRole('admin', 'petugas'));
 // Registrations
 router.get('/registrations', listAdminRegistrations);
 router.get('/registrations/:id', getAdminRegistration);
+router.post('/registrations/:id/verify', verifyRegistration);
 router.post('/registrations/:id/approve', approveRegistration);
 router.post('/registrations/:id/reject', rejectRegistration);
 router.post('/registrations/:id/request-revision', requestRevision);

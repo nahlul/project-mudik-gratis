@@ -99,13 +99,13 @@ async function getAdminRegistration(req, res, next) {
 async function approveRegistration(req, res, next) {
   try {
     const { id } = req.params;
-    const { note } = req.body;
+    const note = req.body.note || req.body.notes || '';
 
     const regs = await query(
-      "SELECT * FROM registrations WHERE id = ? AND status = 'submitted'",
+      "SELECT * FROM registrations WHERE id = ? AND status IN ('submitted', 'need_revision')",
       [id]
     );
-    if (!regs.length) return error(res, 'Registration not found or not in submitted status', 404);
+    if (!regs.length) return error(res, 'Pendaftaran tidak ditemukan atau tidak dalam status menunggu verifikasi', 404);
 
     const registration = regs[0];
 
@@ -184,14 +184,14 @@ async function approveRegistration(req, res, next) {
 async function rejectRegistration(req, res, next) {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
-    if (!reason) return error(res, 'Rejection reason is required', 422);
+    const reason = req.body.reason || req.body.note || req.body.notes || '';
+    if (!reason.trim()) return error(res, 'Alasan penolakan wajib diisi', 422);
 
     const regs = await query(
-      "SELECT * FROM registrations WHERE id = ? AND status IN ('submitted','need_revision')",
+      "SELECT * FROM registrations WHERE id = ? AND status IN ('submitted', 'need_revision')",
       [id]
     );
-    if (!regs.length) return error(res, 'Registration not found or cannot be rejected', 404);
+    if (!regs.length) return error(res, 'Pendaftaran tidak ditemukan atau sudah diproses', 404);
 
     await withTransaction(async (conn) => {
       await conn.execute(
@@ -213,7 +213,7 @@ async function rejectRegistration(req, res, next) {
       await conn.execute(
         `INSERT INTO notifications (user_id, channel, event_type, title, message, delivery_status)
          VALUES (?, 'internal', 'registration.rejected', 'Pendaftaran Ditolak', ?, 'sent')`,
-        [regs[0].user_id, `Pendaftaran Anda ditolak. Alasan: ${reason}`]
+        [regs[0].user_id, `Pendaftaran Anda tidak dapat disetujui. Alasan: ${reason}`]
       );
 
       await conn.execute(
@@ -223,7 +223,7 @@ async function rejectRegistration(req, res, next) {
       );
     });
 
-    return success(res, null, 'Registration rejected');
+    return success(res, null, 'Pendaftaran berhasil ditolak');
   } catch (err) {
     next(err);
   }
@@ -232,14 +232,14 @@ async function rejectRegistration(req, res, next) {
 async function requestRevision(req, res, next) {
   try {
     const { id } = req.params;
-    const { note } = req.body;
-    if (!note) return error(res, 'Revision note is required', 422);
+    const note = req.body.note || req.body.notes || req.body.reason || '';
+    if (!note.trim()) return error(res, 'Catatan perbaikan wajib diisi', 422);
 
     const regs = await query(
       "SELECT * FROM registrations WHERE id = ? AND status = 'submitted'",
       [id]
     );
-    if (!regs.length) return error(res, 'Registration not found or not in submitted status', 404);
+    if (!regs.length) return error(res, 'Pendaftaran tidak ditemukan atau tidak dalam status terkirim', 404);
 
     await withTransaction(async (conn) => {
       await conn.execute(
@@ -260,7 +260,27 @@ async function requestRevision(req, res, next) {
       );
     });
 
-    return success(res, null, 'Revision requested');
+    return success(res, null, 'Permintaan perbaikan berhasil dikirim ke peserta');
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function verifyRegistration(req, res, next) {
+  try {
+    const { action, notes, note, reason } = req.body;
+    req.body.note = note || notes || reason || '';
+    req.body.reason = reason || notes || note || '';
+    if (action === 'approve') {
+      return approveRegistration(req, res, next);
+    }
+    if (action === 'reject') {
+      return rejectRegistration(req, res, next);
+    }
+    if (action === 'request_revision' || action === 'revision') {
+      return requestRevision(req, res, next);
+    }
+    return error(res, 'Aksi tidak valid (harus approve, reject, atau request_revision)', 422);
   } catch (err) {
     next(err);
   }
@@ -269,16 +289,22 @@ async function requestRevision(req, res, next) {
 async function serveDocument(req, res, next) {
   try {
     const { documentId } = req.params;
-    const docs = await query(
+    let docs = await query(
       'SELECT storage_key, original_filename, mime_type FROM identity_documents WHERE id = ?',
       [documentId]
     );
-    if (!docs.length) return error(res, 'Document not found', 404);
+    if (!docs.length) {
+      docs = await query(
+        'SELECT storage_key, original_filename, mime_type FROM identity_documents WHERE registration_passenger_id = ? ORDER BY id DESC LIMIT 1',
+        [documentId]
+      );
+    }
+    if (!docs.length) return error(res, 'Dokumen tidak ditemukan', 404);
 
     const doc = docs[0];
     const filePath = path.join(STORAGE_PATH, doc.storage_key);
     if (!fs.existsSync(filePath)) {
-      return error(res, 'File not found on storage', 404);
+      return error(res, 'Berkas tidak ditemukan pada server', 404);
     }
 
     res.setHeader('Content-Type', doc.mime_type || 'application/octet-stream');
@@ -547,6 +573,7 @@ module.exports = {
   approveRegistration,
   rejectRegistration,
   requestRevision,
+  verifyRegistration,
   serveDocument,
   listAdminRoutes,
   createRoute,

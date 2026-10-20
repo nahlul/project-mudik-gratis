@@ -12,7 +12,7 @@ import type {
   Passenger,
 } from '../types';
 
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
     return envUrl;
@@ -22,6 +22,12 @@ const getApiBaseUrl = () => {
     return `${protocol}//${hostname}:3001/api/v1`;
   }
   return 'http://localhost:3001/api/v1';
+};
+
+export const getDocumentUrl = (documentId: number) => {
+  const token = localStorage.getItem('token');
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/admin/documents/${documentId}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
 };
 
 const api = axios.create({
@@ -145,7 +151,16 @@ export const AdminAPI = {
     api.get<Registration>(`/admin/registrations/${id}`),
 
   verifyRegistration: (id: number, action: 'approve' | 'reject' | 'request_revision', notes?: string) =>
-    api.post(`/admin/registrations/${id}/verify`, { action, notes }),
+    api.post(`/admin/registrations/${id}/verify`, { action, notes, reason: notes, note: notes }),
+
+  approveRegistration: (id: number, note?: string) =>
+    api.post(`/admin/registrations/${id}/approve`, { note }),
+
+  rejectRegistration: (id: number, reason: string) =>
+    api.post(`/admin/registrations/${id}/reject`, { reason }),
+
+  requestRevision: (id: number, note: string) =>
+    api.post(`/admin/registrations/${id}/request-revision`, { note }),
 
   listRoutes: (params?: Record<string, unknown>) =>
     api.get<Route[]>('/admin/routes', { params }),
