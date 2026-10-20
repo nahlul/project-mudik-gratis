@@ -69,9 +69,16 @@ export default function AdminAktivitasPage() {
             ))}
           </div>
         )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={logs.length}
+          pageSize={10}
+          onPageChange={setCurrentPage}
+          itemLabel="aktivitas"
+          className="border-0 border-t rounded-none"
+        />
       </div>
-
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </AdminLayout>
   );
 }

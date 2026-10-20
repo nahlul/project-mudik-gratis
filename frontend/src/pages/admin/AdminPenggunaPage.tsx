@@ -80,9 +80,16 @@ export default function AdminPenggunaPage() {
             </table>
           </div>
         )}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={users.length}
+          pageSize={10}
+          onPageChange={setCurrentPage}
+          itemLabel="pengguna"
+          className="border-0 border-t rounded-none"
+        />
       </div>
-
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </AdminLayout>
   );
 }

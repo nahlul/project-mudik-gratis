@@ -34,15 +34,15 @@ async function listAdminRegistrations(req, res, next) {
       params.push(req.query.date);
     }
     if (req.query.search) {
-      conditions.push('(r.registration_number LIKE ? OR u.name LIKE ? OR u.email LIKE ?)');
+      conditions.push('(r.registration_number LIKE ? OR u.name LIKE ? OR u.email LIKE ? OR EXISTS (SELECT 1 FROM registration_passengers rp2 WHERE rp2.registration_id = r.id AND (rp2.full_name LIKE ? OR rp2.nik LIKE ?)))');
       const like = `%${req.query.search}%`;
-      params.push(like, like, like);
+      params.push(like, like, like, like, like);
     }
 
     const where = conditions.join(' AND ');
 
     const countRows = await query(
-      `SELECT COUNT(*) as total FROM registrations r
+      `SELECT COUNT(DISTINCT r.id) as total FROM registrations r
        INNER JOIN departure_schedules ds ON ds.id = r.schedule_id
        INNER JOIN users u ON u.id = r.user_id
        WHERE ${where}`,
@@ -53,8 +53,10 @@ async function listAdminRegistrations(req, res, next) {
     const registrations = await query(
       `SELECT r.id, r.registration_number, r.status, r.submitted_at, r.reviewed_at, r.created_at,
          u.name as user_name, u.email as user_email,
-         ds.departure_date, rt.route_name,
-         COUNT(rp.id) as passenger_count
+         ds.departure_date, ds.departure_time, ds.departure_location,
+         rt.origin, rt.destination, rt.route_name,
+         COUNT(rp.id) as passenger_count,
+         GROUP_CONCAT(rp.full_name SEPARATOR ', ') as passenger_names
        FROM registrations r
        INNER JOIN users u ON u.id = r.user_id
        INNER JOIN departure_schedules ds ON ds.id = r.schedule_id

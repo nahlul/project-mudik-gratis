@@ -84,6 +84,14 @@ export interface Registration {
   status: 'draft' | 'submitted' | 'need_revision' | 'verified' | 'rejected';
   admin_notes?: string;
   rejection_reason?: string;
+  user_name?: string;
+  user_email?: string;
+  departure_date?: string;
+  departure_time?: string;
+  departure_location?: string;
+  route_name?: string;
+  passenger_count?: number;
+  passenger_names?: string;
   passengers?: Passenger[];
   schedule?: Schedule;
   created_at: string;
