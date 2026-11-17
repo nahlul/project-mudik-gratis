@@ -1,39 +1,46 @@
-# Laporan Pengujian & Cross-Check - Mudik Gratis Aceh 2026
+# Testing dan verifikasi
 
-Pengujian sistem dilakukan secara menyeluruh mencakup End-to-End API testing dan pengujian UI interaktif.
+Validasi yang dijalankan pada source yang dipasang ke repository ini:
 
----
+## Backend
 
-## 1. Hasil Pengujian End-to-End (10 Skenario Kritis)
+```bash
+cd backend
+npx tsc --noEmit
+npm test
+```
 
-| No | Skenario Pengujian | Hasil Aktual | Status |
-|---|---|---|---|
-| 1 | Cek 18 Rute Resmi | Mengembalikan tepat 18 rute resmi sesuai urutan | ✅ LULUS |
-| 2 | Registrasi Peserta Baru | Akun peserta baru berhasil dibuat, password di-hash bcrypt | ✅ LULUS |
-| 3 | Tambah Anggota Keluarga | Data tersimpan di MySQL lengkap dengan NIK & alamat | ✅ LULUS |
-| 4 | Cek Jadwal & Kuota Kursi | Menampilkan sisa kursi live secara dinamis | ✅ LULUS |
-| 5 | Buat Draft Pendaftaran | Nomor registrasi unik terbuat (`REG-YYYYMMDD-XXXXXX`), relasi penumpang tersimpan | ✅ LULUS |
-| 6 | Upload Berkas Dokumen (Multipart) | Berkas tersimpan di storage privat dengan UUID acak, mime-type tervalidasi | ✅ LULUS |
-| 7 | Submit Pendaftaran | Status terkunci menjadi `submitted`, dicek kelengkapan berkas | ✅ LULUS |
-| 8 | Login Admin / Petugas | Otentikasi admin sukses, JWT memuat role `admin` | ✅ LULUS |
-| 9 | Verifikasi & Persetujuan Admin | Admin menyetujui, catatan audit tercatat, tiket diterbitkan | ✅ LULUS |
-| 10 | Penerbitan Tiket Digital | Tiket aktif terbit dengan nomor unik `MG-YYYYMMDD-XXXXXX` & QR verification code | ✅ LULUS |
+Hasil terakhir:
 
----
+- TypeScript: **PASS**
+- Smoke tests: **3/3 PASS**
+  - health endpoint
+  - admin route CRUD, validasi input, RBAC, dan persistence
+  - multipart registration dengan array penumpang
 
-## 2. Pengujian UI Frontend & Antarmuka Browser
+## Frontend
 
-- **Kompilasi TypeScript:** `tsc -b && vite build` lulus 100% tanpa error.
-- **Halaman Publik:** `/`, `/program`, `/panduan`, `/login`, `/register` teruji responsif.
-- **Dashboard Peserta:** Berhasil login, menampilkan riwayat, sapaan dinamis, notifikasi.
-- **Form Pendaftaran (Stepper 5 Langkah):**
-  - Step 1: 18 rute tampil sebagai kartu pilihan interaktif.
-  - Step 2: Jadwal keberangkatan terhubung live dengan kapasitas kursi.
-  - Step 3: Input identitas penumpang (NIK 16 digit, gender, tgl lahir).
-  - Step 4: Upload berkas KTP/KIA.
-  - Step 5: Ringkasan pendaftaran.
-- **Panel Admin:**
-  - `/admin/dashboard`: Metrik statistik live (total pendaftar, kuota, tiket, rute).
-  - `/admin/pendaftar`: Tabel filter pendaftar live.
-  - `/admin/rute`: Kartu 18 rute dengan toggle status aktif/nonaktif.
-  - `/admin/jadwal`: 36 jadwal keberangkatan untuk 18 rute.
+```bash
+cd frontend
+npm run build
+```
+
+Hasil terakhir: **PASS**. Vite masih menampilkan warning ukuran chunk JavaScript besar; warning tersebut bukan error build.
+
+## Live smoke check
+
+```bash
+curl http://127.0.0.1:3000/health
+```
+
+Expected response:
+
+```json
+{"ok":true}
+```
+
+Endpoint protected harus menolak request tanpa JWT dengan HTTP `401`, bukan mengembalikan data.
+
+## Catatan data
+
+Pengujian tidak boleh memakai `db push`, update, delete, atau fixture pada database existing tanpa memastikan targetnya benar. Jika memakai data uji, gunakan ID yang jelas dan pulihkan perubahan setelah test. Jangan mencetak isi `.env`, password, token, atau connection string.

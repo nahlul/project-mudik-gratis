@@ -1,81 +1,57 @@
-# Dokumentasi API - Mudik Gratis Aceh 2026
+# API Ringkas
 
-Base URL (Development): `http://localhost:3001/api/v1`
-Format Respons: JSON (`{ success: boolean, data?: any, message: string }`)
+Base URL development: `http://localhost:3000`
 
----
+Semua endpoint protected memakai header:
 
-## 1. Autentikasi (`/auth`)
+```text
+Authorization: Bearer <JWT>
+```
 
-| Metode | Endpoint | Deskripsi | Akses |
-|---|---|---|---|
-| `POST` | `/auth/register` | Mendaftarkan akun peserta baru | Publik |
-| `POST` | `/auth/login` | Masuk ke sistem (peserta/admin) & dapatkan JWT | Publik |
-| `POST` | `/auth/logout` | Keluar dari sistem | Authenticated |
-| `GET` | `/auth/me` | Mendapatkan data profil akun yang sedang login | Authenticated |
-| `POST` | `/auth/forgot-password` | Pengajuan lupa kata sandi | Publik |
-| `POST` | `/auth/reset-password` | Reset kata sandi dengan token | Publik |
+## Auth
 
----
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/request-reset-password`
+- `POST /api/auth/reset-password`
+- `GET /api/user/profile`
 
-## 2. Rute & Jadwal (`/routes`)
+## Public
 
-| Metode | Endpoint | Deskripsi | Akses |
-|---|---|---|---|
-| `GET` | `/routes` | Mengambil daftar 18 rute resmi | Publik |
-| `GET` | `/routes/:id` | Mengambil detail 1 rute | Publik |
-| `GET` | `/routes/:id/schedules` | Mengambil daftar jadwal keberangkatan & sisa kuota | Publik |
+- `GET /health`
+- `GET /api/rute`
+- `GET /api/terminal`
+- `GET /api/portal/status`
+- `GET /api/kendaraan`
+- `GET /api/feedback`
 
----
+## Peserta
 
-## 3. Anggota Keluarga (`/family-members`)
+- `GET /api/pendaftaran`
+- `GET /api/pendaftaran/riwayat`
+- `POST /api/pendaftaran?rute_id=:id` — multipart registration
+- `PUT /api/pendaftaran/:id/koreksi`
+- `POST /api/pendaftaran/:id/konfirmasi`
+- `PUT /api/pendaftaran/konfirmasi-kehadiran/:id` — konfirmasi seluruh keluarga dari link
+- `GET /api/tiket/:id`
+- `GET /api/tiket/download/:id`
+- `POST /api/upload`
 
-| Metode | Endpoint | Deskripsi | Akses |
-|---|---|---|---|
-| `GET` | `/family-members` | Daftar anggota keluarga milik user | Peserta |
-| `POST` | `/family-members` | Tambah anggota keluarga baru | Peserta |
-| `GET` | `/family-members/:id` | Detail anggota keluarga | Peserta (Owner) |
-| `PATCH` | `/family-members/:id` | Edit anggota keluarga | Peserta (Owner) |
-| `DELETE` | `/family-members/:id` | Hapus anggota keluarga | Peserta (Owner) |
+## Admin
 
----
+- `GET /api/admin/stats`
+- `GET /api/admin/pendaftar`
+- `GET /api/admin/pendaftar/paginated`
+- `PUT /api/admin/verifikasi/:id`
+- `PUT /api/admin/verifikasi-custom/:familyId`
+- `PUT /api/admin/verifikasi-keluarga/:familyId`
+- `PUT /api/admin/batalkan-peserta/:id`
+- `PUT /api/admin/pindah-rute/:familyId`
+- `POST /api/admin/assign-bus`
+- `GET/POST /api/admin/kendaraan`
+- `PUT/DELETE /api/admin/kendaraan/:id`
+- `POST /api/admin/kirim-link-konfirmasi/:familyId`
+- `POST /api/admin/kirim-konfirmasi-semua-h3`
+- `GET /api/admin/export/pendaftar`
 
-## 4. Pendaftaran Mudik (`/registrations`)
-
-| Metode | Endpoint | Deskripsi | Akses |
-|---|---|---|---|
-| `POST` | `/registrations` | Membuat draft pendaftaran beserta data penumpang | Peserta |
-| `GET` | `/registrations` | Daftar riwayat pendaftaran user | Peserta |
-| `GET` | `/registrations/:id` | Detail pendaftaran, status verifikasi & dokumen | Peserta/Admin |
-| `POST` | `/registrations/:id/passengers/:passengerId/documents` | Upload dokumen identitas penumpang (KTP/KIA/KK) | Peserta |
-| `POST` | `/registrations/:id/submit` | Mengunci dan mengajukan pendaftaran ke admin | Peserta |
-
----
-
-## 5. Tiket Digital (`/tickets`)
-
-| Metode | Endpoint | Deskripsi | Akses |
-|---|---|---|---|
-| `GET` | `/tickets` | Mengambil daftar tiket aktif milik user | Peserta |
-| `GET` | `/tickets/:id` | Mengambil detail tiket digital dan QR verification code | Peserta (Owner) |
-| `GET` | `/tickets/:id/download` | Unduh payload tiket untuk cetak PDF | Peserta (Owner) |
-
----
-
-## 6. Panel Administrator (`/admin`)
-
-| Metode | Endpoint | Deskripsi | Akses |
-|---|---|---|---|
-| `GET` | `/admin/stats` | Statistik ringkasan kuota, pendaftar, dan tiket | Admin / Petugas |
-| `GET` | `/admin/registrations` | Daftar semua pendaftar (filter rute, status, tanggal) | Admin / Petugas |
-| `GET` | `/admin/registrations/:id` | Detail lengkap pendaftar untuk verifikasi berkas | Admin / Petugas |
-| `POST` | `/admin/registrations/:id/approve` | Setujui pendaftaran & terbitkan tiket otomatis | Admin / Petugas |
-| `POST` | `/admin/registrations/:id/reject` | Tolak pendaftaran beserta alasan wajib | Admin / Petugas |
-| `POST` | `/admin/registrations/:id/request-revision` | Minta perbaikan dokumen kepada peserta | Admin / Petugas |
-| `GET` | `/admin/documents/:documentId` | Mengunduh/melihat berkas identitas privat | Admin / Petugas |
-| `GET` | `/admin/routes` | Mengelola data rute perjalanan | Admin / Petugas |
-| `PATCH` | `/admin/routes/:id` | Aktifkan/nonaktifkan rute | Admin |
-| `GET` | `/admin/schedules` | Mengambil semua jadwal keberangkatan bus | Admin / Petugas |
-| `POST` | `/admin/schedules` | Menambah jadwal keberangkatan bus baru | Admin |
-| `GET` | `/admin/users` | Daftar semua pengguna terdaftar dan perannya | Admin |
-| `GET` | `/admin/activity-logs` | Jejak audit log keamanan seluruh aktivitas admin | Admin |
+Detail payload dan validasi mengikuti implementasi `backend/src/server.ts` serta kontrak pemanggilan pada `frontend/lib/api.ts`.

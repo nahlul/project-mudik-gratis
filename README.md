@@ -1,66 +1,107 @@
 # Mudik Gratis Aceh 2026
 
-Aplikasi Resmi Program Mudik Gratis Dinas Perhubungan Pemerintah Aceh.
+Aplikasi web program Mudik Gratis Dinas Perhubungan Aceh.
 
-Aplikasi web full-stack terintegrasi dengan database MySQL, backend Node.js (Express.js), dan frontend React.js (TypeScript, Vite, Tailwind CSS).
+## Stack yang dipakai
 
----
+- **Frontend:** React + TypeScript + Vite + Tailwind CSS
+- **Backend:** Node.js + Express + TypeScript + Prisma
+- **Database:** PostgreSQL
+- **Autentikasi:** JWT + bcrypt
+- **Upload:** penyimpanan lokal backend dengan nama file acak
 
-## 🚀 Fitur Unggulan
+> Frontend dan backend adalah dua aplikasi terpisah. Frontend tidak mengakses database secara langsung; semua data melewati API backend. Project ini **tidak menggunakan MySQL**.
 
-- **18 Rute Resmi:** Terhubung langsung ke database MySQL.
-- **Pendaftaran Mandiri Peserta:** Form multi-step (Pilih Rute, Jadwal, Penumpang, Upload Dokumen, Ringkasan).
-- **Verifikasi KTP / KIA / KK:** Validasi dokumen identitas terunggah ke storage privat.
-- **Dashboard Petugas & Admin:** Review berkas peserta, approval, penolakan dengan catatan wajib, serta pemantauan kuota kursi.
-- **Tiket Digital & Validasi QR:** Penerbitan nomor tiket unik otomatis dan QR code verification.
-- **Manajemen Keluarga:** Simpan data keluarga untuk mempercepat pendaftaran berulang.
-- **Notifikasi Internal & Audit Log:** Rekam jejak seluruh aksi penting dan status verifikasi.
+## Struktur
 
----
-
-## 📁 Struktur Direktori
-
-```
+```text
 project-mudik-gratis/
-├── backend/          # REST API Express.js + MySQL
-│   ├── migrations/   # Skema tabel & seed SQL
-│   ├── src/          # Controllers, routes, middleware, models
-│   ├── storage/      # Storage privat dokumen identitas
+├── backend/
+│   ├── prisma/schema.prisma
+│   ├── src/server.ts
+│   ├── test/smoke.test.ts
 │   └── package.json
-├── frontend/         # Aplikasi Web React 18 + Vite + TypeScript
-│   ├── src/
-│   │   ├── components/ # Reusable UI, Navbar, Footer, Layout
-│   │   ├── pages/      # Halaman Publik, Peserta, Admin
-│   │   ├── context/    # AuthContext (JWT & Role Guard)
-│   │   └── lib/        # API Client Axios
+├── frontend/
+│   ├── pages/
+│   ├── components/
+│   ├── lib/api.ts
 │   └── package.json
-├── docs/             # Dokumentasi API, Database, Deployment & Testing
-└── README.md
+└── docs/
 ```
 
----
+## Menjalankan di development
 
-## ⚡ Cara Menjalankan
+### 1. PostgreSQL
 
-### Backend:
+```bash
+sudo systemctl start postgresql
+sudo systemctl status postgresql
+```
+
+Buat database/user hanya jika belum tersedia. Jangan mencetak password atau isi `.env` ke log/chat.
+
+### 2. Backend
+
 ```bash
 cd backend
+cp .env.example .env
+# Isi DATABASE_URL dan JWT_SECRET di .env secara lokal
 npm install
-npm run migrate
-npm start
+npx prisma generate
+npm run dev
 ```
-Server berjalan di `http://localhost:3001`.
 
-### Frontend:
+Backend aktif di `http://localhost:3000`.
+
+Cek kesehatan API:
+
+```bash
+curl http://127.0.0.1:3000/health
+```
+
+### 3. Frontend
+
+Buka terminal baru:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Aplikasi berjalan di `http://localhost:5174` (atau `5173`).
 
----
+Frontend aktif di `http://localhost:5173` atau port Vite berikutnya yang tersedia. Saat `VITE_API_BASE_URL` kosong, request `/api` diteruskan ke backend melalui proxy Vite.
 
-## 🔑 Kredensial Default Administrator
-- **Email:** `admin@mudikgratis.ac.id`
-- **Kata Sandi:** `Admin@2026!`
+## Build dan test
+
+```bash
+cd backend
+npx tsc --noEmit
+npm test
+npm run build
+
+cd ../frontend
+npm run build
+```
+
+## Produksi
+
+Build backend lalu jalankan hasil kompilasi:
+
+```bash
+cd backend
+npm install
+npx prisma generate
+npm run build
+node dist/src/server.js
+```
+
+Build frontend menghasilkan folder `frontend/dist/` yang dapat disajikan Nginx atau static hosting. Lihat `docs/DEPLOYMENT.md` untuk konfigurasi lebih lengkap.
+
+## Environment
+
+File `.env` tidak disimpan ke GitHub. Gunakan file contoh:
+
+- `backend/.env.example`
+- `frontend/.env.example`
+
+Jangan commit password database, JWT secret, token, atau kredensial provider eksternal.

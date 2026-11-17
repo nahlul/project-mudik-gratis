@@ -1,76 +1,77 @@
-# Panduan Deployment - Mudik Gratis Aceh 2026
+# Deployment
 
-Proyek ini dirancang terpisah antara Frontend (React + Vite) dan Backend (Node.js + Express) sehingga dapat di-deploy secara independen pada VPS, Vercel, Netlify, atau Docker.
+Frontend dan backend dapat dijalankan terpisah, tetapi keduanya memakai API backend yang sama.
 
----
+## Persyaratan
 
-## 1. Persyaratan Server
-- Node.js versi 18+ (direkomendasikan v20 / v24)
-- MySQL 8.0 atau MariaDB 10.6+
-- Reverse Proxy Nginx (untuk HTTPS & routing port)
+- Node.js 20 atau lebih baru
+- PostgreSQL 14+ (provider Prisma project: `postgresql`)
+- Nginx atau reverse proxy jika memakai domain/HTTPS
 
----
-
-## 2. Menjalankan Backend (Express.js)
+## Backend
 
 ```bash
 cd backend
-
-# 1. Install dependensi
-npm install
-
-# 2. Salin environment
 cp .env.example .env
-# Edit .env dengan kredensial database & JWT secret Anda
-
-# 3. Jalankan migrasi dan seed database
-npm run migrate
-
-# 4. Jalankan server produksi
-npm start
-# Atau gunakan PM2 untuk background process:
-# pm2 start src/server.js --name "mudik-backend"
+# Isi DATABASE_URL, JWT_SECRET, PORT, dan CORS_ORIGIN secara lokal
+npm install
+npx prisma generate
+npm run build
+node dist/src/server.js
 ```
 
-Port default backend: `3001`
+Port default: `3000`.
 
----
+Verifikasi:
 
-## 3. Menjalankan Frontend (React + Vite)
+```bash
+curl http://127.0.0.1:3000/health
+```
+
+Output sehat mengandung `{"ok":true}`.
+
+Untuk menjalankan development watcher:
+
+```bash
+npm run dev
+```
+
+## Frontend
+
+Development:
 
 ```bash
 cd frontend
-
-# 1. Install dependensi
 npm install
-
-# 2. Atur URL API produksi di .env
-echo "VITE_API_BASE_URL=https://api.mudikgratis.acehprov.go.id/api/v1" > .env
-
-# 3. Build bundle produksi
-npm run build
-
-# 4. Hasil build statis berada di folder: frontend/dist/
-# Siap dideploy ke Nginx (/var/www/...) atau Vercel / Cloudflare Pages.
+# VITE_API_BASE_URL boleh kosong jika memakai proxy Vite
+npm run dev
 ```
 
----
+Production static build:
 
-## 4. Konfigurasi Nginx Reverse Proxy Contoh
+```bash
+npm run build
+```
+
+Hasilnya berada di `frontend/dist/`.
+
+## Nginx same-origin
+
+Dengan frontend dan API pada domain yang sama, biarkan `VITE_API_BASE_URL` kosong agar frontend memanggil `/api/...`. Contoh proxy API:
 
 ```nginx
 server {
-    server_name mudikgratis.acehprov.go.id;
+    server_name example.invalid;
 
-    # Frontend
+    root /var/www/project-mudik-gratis/frontend/dist;
+    index index.html;
+
     location / {
-        root /var/www/mudik-gratis/frontend/dist;
         try_files $uri $uri/ /index.html;
     }
 
-    # Backend API
     location /api/ {
-        proxy_pass http://127.0.0.1:3001;
+        proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -79,3 +80,5 @@ server {
     }
 }
 ```
+
+Jangan commit `.env`, password PostgreSQL, JWT secret, token, atau kredensial provider.
