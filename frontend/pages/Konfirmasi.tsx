@@ -106,9 +106,9 @@ export default function Konfirmasi() {
         const loggedInUser = localStorage.getItem("userId")?.replace(/"/g, "");
 
         try {
-            // 🔥 FIX 3: Pastikan URL param pakai loggedInUser kalau userId dari URL kosong/undefined
-            const targetId = userId && userId !== 'undefined' ? userId : loggedInUser;
-            const url = `${API.PENDAFTARAN}/konfirmasi-kehadiran/${targetId}`;
+            // Konfirmasi memakai endpoint berbasis akun aktif. Jangan kirim userId
+            // sebagai ID pendaftaran: keduanya bisa berbeda dan menyebabkan 404.
+            const url = `${API.PENDAFTARAN}/konfirmasi-kehadiran`;
 
             const res = await fetch(url, {
                 method: "PUT",
