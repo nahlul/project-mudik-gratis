@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
 import heroMobile from "../assets/hero-mobile.png"
 import heroDesktop from "../assets/hero-dekstop.png"
@@ -9,7 +9,8 @@ import { Eye, EyeOff, Lock, LogIn, XCircle, ArrowLeft, AlertTriangle } from "luc
 
 export default function Login() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState("")
+  const location = useLocation()
+  const [email, setEmail] = useState(() => (location.state as any)?.registeredEmail || "")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showModal, setShowModal] = useState(false)

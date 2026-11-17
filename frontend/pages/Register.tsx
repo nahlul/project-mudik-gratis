@@ -97,16 +97,16 @@ export default function Register() {
         return
       }
 
-      // SUKSES — backend langsung kembalikan token, simpan dan redirect ke dashboard
-      if (data.token) {
-        localStorage.setItem("token", data.token)
-        localStorage.setItem("role", data.role || "USER")
-        localStorage.setItem("nama", data.nama || nama)
-      }
+      // Registrasi berhasil tidak langsung login. User diarahkan ke login
+      // agar masuk memakai akun yang baru saja dibuat.
+      localStorage.removeItem("token")
+      localStorage.removeItem("role")
+      localStorage.removeItem("userId")
+      localStorage.removeItem("nama")
 
       setRegisterSuccess(true)
       setModalTitle("Registrasi Berhasil")
-      setModalMsg("Akun berhasil dibuat! Anda akan diarahkan ke dashboard.")
+      setModalMsg("Akun berhasil dibuat. Silakan login menggunakan email dan password yang baru didaftarkan.")
       setShowModal(true)
 
     } catch (err) {
@@ -122,8 +122,7 @@ export default function Register() {
   function handleModalClose() {
     setShowModal(false)
     if (registerSuccess) {
-      // Auto-login: langsung ke dashboard karena token sudah tersimpan
-      navigate("/dashboard")
+      navigate("/login", { state: { registeredEmail: email } })
     }
   }
 
